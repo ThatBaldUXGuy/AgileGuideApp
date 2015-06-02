@@ -1,7 +1,7 @@
 # SETUP ------------------------------------------------------------
 # Import layers from Sketch
 sketch = Framer.Importer.load "imported/AgileGuideFramer"
-document.body.style.cursor = "auto" 
+document.body.style.cursor = "finger" 
 # "auto" # normal cursor
 # "finger"
 
@@ -83,65 +83,6 @@ menu = sketch['menu']
 # CLOSE
 closeIcon = sketch['closeIcon']
 closeIcon.opacity = 0
-
-# SIDE DRAWER
-# sideDrawer = sketch['sideDrawer']
-# sideDrawer.opacity = 0
-# 
-# SCRIM
-# scrim = sketch['scrim']
-# scrim.opacity = 0
-	
-
-# LAYER STATES ----------------------------------------------------
-# Object states we will be animating between
-agileBubble.states.add
-	default: {scale: 1, opacity: 1} 
-	expanded_colour: {scale: 10} 
-	hidden: {scale: 10, opacity: 0}
-
-	
-agileBubbleNav.states.add
-	default: {scale: 1, opacity: 1} 
-	hidden: {scale: 0.25, opacity: 0} 
-
-
-agileBubbleNav.states.animationOptions = 
-    curve: "spring(600,30,0)"
-
-
-agileBubbleTitle.states.add
-	default: {scale: 1, opacity: 1, midX: agileBubble.midX, midY: agileBubble.midY} 
-	onTheAppBar: {scale: 1, opacity: 1, midX: appBar.midX, midY: appBar.midY} 
-	hidden: {scale: 0, opacity: 0}
-	
-agileBubbleTitle.states.animationOptions = 
-	curve: "spring(600,35,0)"
-
-
-appBar.states.add
-	default: {scale: 1, opacity: 1} 
-	hidden: {scale: 1, opacity: 0}
-
-appBar.states.animationOptions = 
-	delay: 0.1
-
-
-menu.states.add
-	default: {scale: 1, opacity: 1}
-	hidden: {opacity: 0} 
-
-menu.states.animationOptions = 
-    curve: "spring(600,30,0)"
-
-
-agileTopicContent.states.add
-	hidden: {y: agileTopicContent.y+30, opacity:0}
-	shown: {y: agileTopicContent.y, opacity:1}
-	
-agileTopicContent.states.animationOptions = 
-    curve: "spring(750,30,0)"
-
 
 
 # INTRO ANIMATION -------------------------------------------------
@@ -248,7 +189,7 @@ rippleEffect = (event, layer, rippleColour) ->
 			clip: true
 			opacity: 0
 		curve: "ease-out"
-		time: .2
+		time: .3
 	
 	rippleAnimation.on "end", -> 
 		ripple.destroy()
@@ -257,59 +198,86 @@ rippleEffect = (event, layer, rippleColour) ->
 
 # INTERACTIONS ----------------------------------------------------
 
-
-
 # Open a topic ----------------------------------------------------
 agileBubble.on Events.Click, (event)-> 
 	
-		
+	defaultDelayOnOpen = 0.2
+			
 	rippleEffect(event, agileBubble, colorWhite)
 
 
 # Splash the bubble colour out
-	agileBubble.states.animationOptions = 
-		delay: 0.2
+
+	splashOutAnimation = new Animation
+		layer: agileBubble
+		properties:
+			scale: 10
+			opacity: 0
+		delay: defaultDelayOnOpen
 		curve: "spring(300,30,0)"
-	agileBubble.states.switch("expanded_colour")
 	
-
+	splashOutAnimation.start()
+	
+	
 # Hide the nav bubble	
-	agileBubbleNav.states.animationOptions = 
-	    delay: 0.2
-	    curve: "spring(600,30,0)"
-	agileBubbleNav.states.switch("hidden")
 
-# Splash the white	
-	agileBubble.states.switch("hidden")
+	hideNavBubbleAnimation = new Animation
+		layer: agileBubbleNav
+		properties:
+			scale: 0.25
+			opacity: 0
+		delay: defaultDelayOnOpen
+		curve: "spring(600,30,0)"
+		
+	hideNavBubbleAnimation.start()
+
 
 # Show the app bar
-	menu.states.switch("hidden")
-	appBar.states.animationOptions =
-		delay: 0.2
 
-	appBar.states.switch("default")	
+	showAppBarAnimation = new Animation
+		layer: appBar
+		properties:
+			scale: 1
+			opacity: 1
+		delay: defaultDelayOnOpen
+		
+	showAppBarAnimation.start()
+	
+	toggleLayerVisibilityWithAnimation(menu)
 	toggleLayerVisibilityWithAnimation(closeIcon)
+
 
 # Animate the title
 	
 	agileBubbleTitle.superLayer = appBar.superLayer
 	
-	agileBubbleTitle.states.animationOptions =
-		delay: 0.1
+	topicTitleAnimation = new Animation
+		layer: agileBubbleTitle
+		properties:
+			scale: 1
+			opacity: 1
+			midX: appBar.midX
+			midY: appBar.midY 
+		delay: defaultDelayOnOpen
 		curve: "spring(600,30,0)"
-	agileBubbleTitle.states.switch("onTheAppBar")
+		
+	topicTitleAnimation.start()
+	
+# Animate the content
 
-# # Animate the content
-	agileTopicContent.states.switchInstant("hidden")
+	contentOffset = 30
+	agileTopicContent.y = agileTopicContent.y + contentOffset
 	agileTopicContent.bringToFront()
 	
-	agileTopicContent.states.animationOptions = 
-		delay: 0.3
+	showContentAnimation = new Animation
+		layer: agileTopicContent
+		properties:
+			opacity: 1
+			y: agileTopicContent.y - contentOffset
+		delay: defaultDelayOnOpen
 		time: 0.3
-	agileTopicContent.states.switch("shown")
-	
-	 
-
+		
+	showContentAnimation.start()
 	
 # 	Do nothing when I tap the app bar ------------------------------
 appBar.on Events.Click, ->
@@ -319,35 +287,78 @@ appBar.on Events.Click, ->
 
 # Close a topic ----------------------------------------------------
 closeIcon.on Events.Click, ->
+
 	animateIconBounds(closeIcon)
+	
+# 	short delay to make sure we can see the icon bounds
+	Utils.delay 0.1, ->
 
-	agileTopicContent.states.animationOptions = 
-		delay: 0
-		time: 0.1
-	agileTopicContent.states.switch("hidden")
+# hide the content
 
-	agileBubble.states.switch("default")
-	
-	appBar.states.animationOptions = 
-		delay: 0
-		time: 0.1 
-		curve: "spring(450,30,0)"
-	appBar.states.switch("hidden")
-	toggleLayerVisibilityWithAnimation(closeIcon)
-	
-	agileBubbleTitle.superLayer = screenBounds
-	agileBubbleTitle.states.switch("default")
-	agileBubbleTitle.placeBefore(agileBubble)
-	
-	agileBubbleNav.states.animationOptions = 
-	    delay: 0.2
-	    curve: "spring(600,30,0)"
-	agileBubbleNav.states.switch("default")
-	
-	menu.states.switch("default")
-	
-	
+		contentOffset = 30
+		hideContentAnimation = new Animation
+			layer: agileTopicContent
+			properties:
+				opacity: 0
+			time: 0.1
+		
+		hideContentAnimation.start()
 
+# reset the bubble
+
+		resetBubbleAnimation = new Animation
+			layer: agileBubble
+			properties:
+				scale: 1
+				opacity: 1
+			delay: 0.1
+			curve: "spring(300,30,0)"
+	
+		resetBubbleAnimation.start()
+
+# hide the app bar and toggle icons
+
+		hideAppBarAnimation = new Animation
+			layer: appBar
+			properties:
+				scale: 1
+				opacity: 0
+			delay: 0
+			time: 0.1
+		
+		hideAppBarAnimation.start()
+	
+		toggleLayerVisibilityWithAnimation(menu)
+		toggleLayerVisibilityWithAnimation(closeIcon)
+	
+# move the title back to the bubble
+	
+		agileBubbleTitle.superLayer = screenBounds
+	
+		topicTitleAnimation = new Animation
+			layer: agileBubbleTitle
+			properties:
+				scale: 1
+				opacity: 1
+				midX: agileBubble.midX
+				midY: agileBubble.midY
+			delay: 0.1
+			curve: "spring(600,30,0)"
+		
+		topicTitleAnimation.start()
+	
+# show the nav bubble again
+
+		showNavBubbleAnimation = new Animation
+			layer: agileBubbleNav
+			properties:
+				scale: 1
+				opacity: 1
+			delay: 0.2
+			curve: "spring(600,30,0)"
+		
+		showNavBubbleAnimation.start()
+	
 
 # Favourite a topic ----------------------------------------------------
 favourite.on Events.Click, ->
