@@ -88,122 +88,81 @@ closeIcon.opacity = 0
 # INTRO ANIMATION -------------------------------------------------
 
 
-agileBubble.animate
+topicBubbleIntro = new Animation
+	layer: agileBubble
 	properties:
 		scale: 1
 		opacity: 1
 	delay: 0.5
 	curve: "spring(150,10,10,0)"
-	
-agileBubbleNav.animate
+
+navBubbleIntro = new Animation
+	layer: agileBubbleNav
 	properties:
 		scale: 1
 		opacity: 1
 	delay: 0.7
 	curve: "spring(150,10,10,0)"
 
+topicBubbleIntro.start()
+navBubbleIntro.start()
 
 
-# FUNCTIONS -------------------------------------------------------
+# PRODUCT DEMO -------------------------------------------------
+# set runDemo to true and reload the file
+
+runDemo = true
+
+if runDemo is true
+	Utils.delay 2, ->
+ 		openTopic(90, 130)
+ 
+	 Utils.delay 3, ->
+ 		animateIconBounds(favourite)
+	 	toggleLayerVisibilityWithAnimation(favourited)
+
+	 Utils.delay 5, ->
+ 		closeTopic()
+
+ 
 
 
-# Function to toggle layer visibility
-toggleLayerVisibility = (layer) ->
-	if layer.opacity is 0
-		layer.opacity = 1
-	else
-		layer.opacity = 0
-
-# Function to toggle layer visibility with animation
-toggleLayerVisibilityWithAnimation = (layer) ->
-	if layer.opacity is 0
-		layer.animate
-			properties:
-				opacity: 1
-			curve: "ease-in-out"
-			time: 0.2
-	else
-		layer.animate
-			properties:
-				opacity: 0
-			curve: "ease-in-out"
-			time: 0.2
 
 
-# Function to animate the background behind an icon that has been tapped
-animateIconBounds = (icon) ->
-	
-	iconTapBounds = new Layer
-		backgroundColor: "#ffffff"
-		opacity: 0.2
-		width:45, height:45
-		borderRadius:45
-		midX: icon.midX
-		midY: icon.midY+20
-		
-	iconTapBounds.animate
-		properties:
-			opacity: 0.2
-		curve: "ease-in-out"
-		time: 0.2
 
-	iconTapBounds.on Events.AnimationEnd, ->
-		iconTapBounds.animate
-			properties:
-				opacity: 0
-			curve: "ease-in-out"
-		iconTapBounds.destroy()
-		
-
-# Create a ripple effect for the layer taking into account pointer position
-rippleEffect = (event, layer, rippleColour) ->
-	
-	rippleConstraints = new Layer
-		scale: 1
-		opacity: 0.5
-		superLayer: layer
-		midX: layer.offsetX 
-		midY: layer.offsetY
-		width: layer.width
-		height: layer.height
-		borderRadius: layer.height
-
-	layer.clip = true
-
-	ripple = new Layer
-		borderRadius: "50%"
-		scale: 0
-		opacity: .5
-		superLayer: rippleConstraints
-		backgroundColor: rippleColour
-		brightness: 115
-		midX: event.offsetX
-		midY: event.offsetY
-		index: 0
-		force2d: true
-		
-		
-	rippleAnimation = ripple.animate
-		properties: 
-			scale: layer.width / 50
-			clip: true
-			opacity: 0
-		curve: "ease-out"
-		time: .3
-	
-	rippleAnimation.on "end", -> 
-		ripple.destroy()
-		rippleConstraints.destroy()
-
-
-# INTERACTIONS ----------------------------------------------------
+# EVENT HANDLERS ----------------------------------------------------
 
 # Open a topic ----------------------------------------------------
 agileBubble.on Events.Click, (event)-> 
 	
+	openTopic(event.offsetX, event.offsetY)
+	
+	
+# 	Do nothing when I tap the app bar ------------------------------
+appBar.on Events.Click, ->
+	# I had to do this, otherwise even layers below were receiving clicks
+
+
+# Close a topic ----------------------------------------------------
+closeIcon.on Events.Click, ->
+	
+	closeTopic()
+
+
+# FUNCTIONS -------------------------------------------------------
+
+# Favourite a topic ----------------------------------------------------
+favourite.on Events.Click, ->
+	animateIconBounds(favourite)
+	toggleLayerVisibilityWithAnimation(favourited)
+	
+
+# Open a topic  ---------------------------------------------
+openTopic = (touchX, touchY) ->
+	
 	defaultDelayOnOpen = 0.2
 			
-	rippleEffect(event, agileBubble, colorWhite)
+	rippleEffect(touchX, touchY, agileBubble, colorWhite)
 
 
 # Splash the bubble colour out
@@ -278,15 +237,10 @@ agileBubble.on Events.Click, (event)->
 		time: 0.3
 		
 	showContentAnimation.start()
-	
-# 	Do nothing when I tap the app bar ------------------------------
-appBar.on Events.Click, ->
-	# I had to do this, otherwise even layers below were receiving clicks
 
-	
+# Close a topic -------------------------------------------------
 
-# Close a topic ----------------------------------------------------
-closeIcon.on Events.Click, ->
+closeTopic = () ->
 
 	animateIconBounds(closeIcon)
 	
@@ -360,11 +314,95 @@ closeIcon.on Events.Click, ->
 		showNavBubbleAnimation.start()
 	
 
-# Favourite a topic ----------------------------------------------------
-favourite.on Events.Click, ->
-	animateIconBounds(favourite)
-	toggleLayerVisibilityWithAnimation(favourited)
+# Function to toggle layer visibility
+toggleLayerVisibility = (layer) ->
+	if layer.opacity is 0
+		layer.opacity = 1
+	else
+		layer.opacity = 0
+
+# Function to toggle layer visibility with animation
+toggleLayerVisibilityWithAnimation = (layer) ->
+	if layer.opacity is 0
+		layer.animate
+			properties:
+				opacity: 1
+			curve: "ease-in-out"
+			time: 0.2
+	else
+		layer.animate
+			properties:
+				opacity: 0
+			curve: "ease-in-out"
+			time: 0.2
+
+
+# Function to animate the background behind an icon that has been tapped
+animateIconBounds = (icon) ->
 	
+	iconTapBounds = new Layer
+		backgroundColor: "#ffffff"
+		opacity: 0.2
+		width:45, height:45
+		borderRadius:45
+		midX: icon.midX
+		midY: icon.midY+20
+		
+	iconTapBounds.animate
+		properties:
+			opacity: 0.2
+		curve: "ease-in-out"
+		time: 0.2
+
+	iconTapBounds.on Events.AnimationEnd, ->
+		iconTapBounds.animate
+			properties:
+				opacity: 0
+			curve: "ease-in-out"
+		iconTapBounds.destroy()
+		
+
+# Create a ripple effect for the layer taking into account pointer position
+rippleEffect = (touchX, touchY, layer, rippleColour) ->
+	
+	rippleConstraints = new Layer
+		scale: 1
+		opacity: 0.5
+		superLayer: layer
+		midX: layer.offsetX 
+		midY: layer.offsetY
+		width: layer.width
+		height: layer.height
+		borderRadius: layer.height
+
+	layer.clip = true
+
+	ripple = new Layer
+		borderRadius: "50%"
+		scale: 0
+		opacity: .5
+		superLayer: rippleConstraints
+		backgroundColor: rippleColour
+		brightness: 115
+		midX: touchX
+		midY: touchY
+		index: 0
+		force2d: true
+		
+		
+	rippleAnimation = ripple.animate
+		properties: 
+			scale: layer.width / 50
+			clip: true
+			opacity: 0
+		curve: "ease-out"
+		time: .3
+	
+	rippleAnimation.on "end", -> 
+		ripple.destroy()
+		rippleConstraints.destroy()
+
+
 
 
 
